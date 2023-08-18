@@ -3,20 +3,22 @@
             [mount.core :as mount]
             [ring.adapter.jetty :as jetty]
             [ring.util.io :as ring-io]
-            [ring.util.response :as response]))
+            [ring.util.response :as response]
+            [clojure.java.io :as io]))
+
 
 (defn handler [_request]
   (-> (ring-io/piped-input-stream
        (fn [output]
-         (charred/write-json output
-                             (map (fn [x]
-                                    (when (zero? (mod x 100))
-                                      (println x))
-                                    (Thread/sleep 1)
-                                    {:x x})
-                                  (range 1000000)))))
+         (with-open [w (io/writer output)]
+           (while true ;; NDJSON
+             (.write w
+                     (charred/write-json-str {:name (str "Random name " (rand-int 1000))
+                                              :id   (str (random-uuid))}))
+             (.write w "\r\n"))))) ;; new line delimiter
       response/response
-      (response/content-type "application/json")))
+      (response/content-type "application/json")
+      (response/header "Transfer-Encoding" "chunked")))
 
 (mount/defstate server
   :start (jetty/run-jetty #'handler
@@ -25,4 +27,5 @@
   :stop (.stop server))
 
 (comment
-  (mount/start))
+  (mount/start)
+  )
