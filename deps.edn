@@ -1,0 +1,4 @@
+{:paths ["src"]
+ :deps  {ring/ring             {:mvn/version "1.10.0"}
+         com.cnuernber/charred {:mvn/version "1.031"}
+         mount/mount           {:mvn/version "0.1.17"}}}
